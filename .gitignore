@@ -37,3 +37,7 @@ dist/
 
 # Bytecode
 *.egg-info/
+
+# Logs
+logs/
+*.log
