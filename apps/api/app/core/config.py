@@ -9,6 +9,7 @@ from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 
+from typing import List
 from pydantic import Field, PostgresDsn, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -86,6 +87,28 @@ class Settings(BaseSettings):
     # ======================================================
 
     API_V1_PREFIX: str = "/api/v1"
+
+    # ======================================================
+    # CORS
+    # ======================================================
+
+    CORS_ALLOWED_ORIGINS: str = (
+        "http://localhost:3000,"
+        "http://127.0.0.1:3000"
+    )
+
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """
+        Return the allowed CORS origins as a list.
+        """
+
+        return [
+            origin.strip()
+            for origin in self.CORS_ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
     # ======================================================
     # Server
