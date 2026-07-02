@@ -1,26 +1,30 @@
 """
 Health Check Endpoints
 """
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter
-
+from app.api.v1.dependencies import get_db
 from app.core.config import settings
 
 router = APIRouter()
 
 
 @router.get(
-    "/health",
-    summary="Application Health Check",
+    "/health/database",
+    summary="Database Health Check",
 )
-async def health_check():
+async def database_health_check(
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Returns application health status.
+    Verify database connectivity.
     """
 
+    result = await db.execute(text("SELECT 1"))
+
     return {
-        "status": "healthy",
-        "service": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT.value,
+        "database": "connected",
+        "result": result.scalar(),
     }
