@@ -2,13 +2,12 @@
 User API Endpoints
 """
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.db.session import get_db
-from app.repositories.user_repository import UserRepository
+from app.api.v1.dependencies import get_user_service
 from app.schemas.user import UserCreate, UserRead
 from app.services.user_service import UserService
 
@@ -18,24 +17,18 @@ router = APIRouter(
 )
 
 
-def get_user_service(
-    session: AsyncSession = Depends(get_db),
-) -> UserService:
-    """
-    Dependency injection for UserService.
-    """
-    repository = UserRepository(session)
-    return UserService(repository)
-
-
 @router.post(
     "",
     response_model=UserRead,
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create User",
 )
 async def create_user(
     user: UserCreate,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[
+        UserService,
+        Depends(get_user_service),
+    ],
 ):
     """
     Create a new user.
@@ -46,7 +39,7 @@ async def create_user(
 
     except ValueError as exc:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
 
@@ -54,10 +47,14 @@ async def create_user(
 @router.get(
     "/{user_id}",
     response_model=UserRead,
+    summary="Get User",
 )
 async def get_user(
     user_id: UUID,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[
+        UserService,
+        Depends(get_user_service),
+    ],
 ):
     """
     Retrieve a user by ID.
@@ -67,7 +64,7 @@ async def get_user(
 
     if user is None:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",
         )
 

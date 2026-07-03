@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.repositories.base import BaseRepository
+from uuid import UUID
 
 
 class UserRepository(BaseRepository[User]):
@@ -31,6 +32,15 @@ class UserRepository(BaseRepository[User]):
         )
 
         return result.scalar_one_or_none()
+
+    async def get_by_uuid(
+        self,
+        user_id: UUID,
+    ) -> User | None:
+        """
+        Retrieve a user by UUID.
+        """
+        return await self.get_by_id(user_id)
 
     async def get_by_username(
         self,

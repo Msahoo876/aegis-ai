@@ -95,6 +95,23 @@ def create_access_token(
         algorithm=settings.ALGORITHM,
     )
 
+def get_token_subject(
+    token: str,
+) -> str:
+    """
+    Extract the user ID (subject) from a JWT.
+    """
+
+    payload = decode_access_token(token)
+
+    subject = payload.get("sub")
+
+    if subject is None:
+        raise ValueError(
+            "Invalid authentication token."
+        )
+
+    return subject
 
 def decode_access_token(
     token: str,

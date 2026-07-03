@@ -2,17 +2,30 @@
 Authentication Endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db
+from typing import Annotated
 
-from app.api.v1.dependencies import get_db
-# from app.db.session import get_session
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from fastapi.security import OAuth2PasswordRequestForm
+
+from app.api.v1.dependencies import (
+    get_current_user,
+    get_db,
+)
+from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, Token
+from app.schemas.auth import Token
+from app.schemas.user import UserRead
 from app.services.auth_service import AuthService
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"],
+)
 
 
 @router.post(
@@ -21,28 +34,47 @@ router = APIRouter(prefix="/auth")
     summary="Login",
 )
 async def login(
-    data: LoginRequest,
-    db: AsyncSession = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db=Depends(get_db),
 ):
+    """
+    Authenticate a user and return a JWT access token.
+    """
 
     repository = UserRepository(db)
-
     service = AuthService(repository)
 
     try:
-
         token = await service.login(
-            data.email,
-            data.password,
+            form_data.username,   # username field contains the email
+            form_data.password,
         )
 
         return Token(
             access_token=token,
+            token_type="bearer",
         )
 
     except ValueError as exc:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
-        )
+        ) from exc
+
+
+@router.get(
+    "/me",
+    response_model=UserRead,
+    summary="Current User",
+)
+async def current_user(
+    user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+):
+    """
+    Return the currently authenticated user.
+    """
+
+    return user
